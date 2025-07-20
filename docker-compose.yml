@@ -1,0 +1,60 @@
+version: '3.9'
+
+services:
+  aghighi-K1:
+    image: bitnami/kafka:3.6
+    container_name: aghighi-K1
+    ports:
+      - "1992:1992"
+    environment:
+      - KAFKA_CFG_ENABLE_KRAFT=true
+      - KAFKA_KRAFT_CLUSTER_ID=1IP73Vo9SM2aEsP4OXpyyQ
+      - KAFKA_CFG_NODE_ID=1
+      - KAFKA_CFG_PROCESS_ROLES=broker,controller
+      - KAFKA_CFG_CONTROLLER_QUORUM_VOTERS=1@aghighi-K1:1993,2@aghighi-K2:1994
+      - KAFKA_CFG_CONTROLLER_LISTENER_NAMES=CONTROLLER
+      - KAFKA_CFG_LISTENERS=PLAINTEXT://:1992,CONTROLLER://:1993
+      - KAFKA_CFG_ADVERTISED_LISTENERS=PLAINTEXT://aghighi-K1:1992
+      - KAFKA_CFG_LOG_DIRS=/bitnami/kafka/data
+    volumes:
+      - ./kafka/aghighi-K1/server.properties:/bitnami/kafka/config/server.properties
+    networks:
+      - kafka-net
+
+  aghighi-K2:
+    image: bitnami/kafka:3.6
+    container_name: aghighi-K2
+    ports:
+      - "1994:1994"
+    environment:
+      - KAFKA_CFG_ENABLE_KRAFT=true
+      - KAFKA_KRAFT_CLUSTER_ID=1IP73Vo9SM2aEsP4OXpyyQ
+      - KAFKA_CFG_NODE_ID=2
+      - KAFKA_CFG_PROCESS_ROLES=broker,controller
+      - KAFKA_CFG_CONTROLLER_QUORUM_VOTERS=1@aghighi-K1:1993,2@aghighi-K2:1994
+      - KAFKA_CFG_CONTROLLER_LISTENER_NAMES=CONTROLLER
+      - KAFKA_CFG_LISTENERS=PLAINTEXT://:1994,CONTROLLER://:1995
+      - KAFKA_CFG_ADVERTISED_LISTENERS=PLAINTEXT://aghighi-K2:1994
+      - KAFKA_CFG_LOG_DIRS=/bitnami/kafka/data
+    volumes:
+      - ./kafka/aghighi-K2/server.properties:/bitnami/kafka/config/server.properties
+    networks:
+      - kafka-net
+
+  message-producer:
+    build: ./producer
+    depends_on:
+      - aghighi-K1
+    networks:
+      - kafka-net
+
+  message-consumer:
+    build: ./consumer
+    depends_on:
+      - aghighi-K1
+    networks:
+      - kafka-net
+
+networks:
+  kafka-net:
+    driver: bridge
