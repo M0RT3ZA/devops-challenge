@@ -1,11 +1,10 @@
-version: '3.9'
-
+version: "3.9"
 services:
   aghighi-K1:
-    image: bitnami/kafka:3.6
+    image: bitnami/kafka:3.6.0
     container_name: aghighi-K1
     ports:
-      - "1992:1992"
+      - "9094:9094"
     environment:
       - KAFKA_CFG_ENABLE_KRAFT=true
       - KAFKA_KRAFT_CLUSTER_ID=1IP73Vo9SM2aEsP4OXpyyQ
@@ -13,16 +12,18 @@ services:
       - KAFKA_CFG_PROCESS_ROLES=broker,controller
       - KAFKA_CFG_CONTROLLER_QUORUM_VOTERS=1@aghighi-K1:1993,2@aghighi-K2:1994
       - KAFKA_CFG_CONTROLLER_LISTENER_NAMES=CONTROLLER
-      - KAFKA_CFG_LISTENERS=PLAINTEXT://:1992,CONTROLLER://:1993
-      - KAFKA_CFG_ADVERTISED_LISTENERS=PLAINTEXT://aghighi-K1:1992
+      - KAFKA_CFG_LISTENERS=PLAINTEXT://:1992,CONTROLLER://:1993,SASL_SSL://:9094
+      - KAFKA_CFG_ADVERTISED_LISTENERS=PLAINTEXT://aghighi-K1:1992,SASL_SSL://aghighi-K1:9094
+      - KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP=PLAINTEXT:PLAINTEXT,CONTROLLER:PLAINTEXT,SASL_SSL:SASL_SSL
+      - KAFKA_CFG_SASL_ENABLED_MECHANISMS=PLAIN
+      - KAFKA_CFG_SASL_MECHANISM_INTER_BROKER_PROTOCOL=PLAIN
+      - KAFKA_CFG_SASL_JAAS_CONFIG=org.apache.kafka.common.security.plain.PlainLoginModule required username="admin" password="admin-secret";
       - KAFKA_CFG_LOG_DIRS=/bitnami/kafka/data
-    volumes:
-      - ./kafka/aghighi-K1/server.properties:/bitnami/kafka/config/server.properties
     networks:
       - kafka-net
 
   aghighi-K2:
-    image: bitnami/kafka:3.6
+    image: bitnami/kafka:3.6.0
     container_name: aghighi-K2
     ports:
       - "1994:1994"
@@ -35,14 +36,14 @@ services:
       - KAFKA_CFG_CONTROLLER_LISTENER_NAMES=CONTROLLER
       - KAFKA_CFG_LISTENERS=PLAINTEXT://:1994,CONTROLLER://:1995
       - KAFKA_CFG_ADVERTISED_LISTENERS=PLAINTEXT://aghighi-K2:1994
+      - KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP=PLAINTEXT:PLAINTEXT,CONTROLLER:PLAINTEXT
       - KAFKA_CFG_LOG_DIRS=/bitnami/kafka/data
-    volumes:
-      - ./kafka/aghighi-K2/server.properties:/bitnami/kafka/config/server.properties
     networks:
       - kafka-net
 
   message-producer:
     build: ./producer
+    container_name: message-producer
     depends_on:
       - aghighi-K1
     networks:
@@ -50,6 +51,7 @@ services:
 
   message-consumer:
     build: ./consumer
+    container_name: message-consumer
     depends_on:
       - aghighi-K1
     networks:
